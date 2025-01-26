@@ -1,0 +1,45 @@
+services:
+  mariadb:
+    image: kadeshar/legacyplayersv3-mariadb
+    networks:
+    - rpll
+    volumes:
+    - ./Database/patches:/docker-entrypoint-initdb.d
+    - rpll_mariadb:/var/lib/mysql
+    environment:
+    - MYSQL_USER=mysql
+    - MYSQL_PASSWORD=vagrant
+    - MYSQL_ROOT_PASSWORD=vagrant
+    - TZ=Europe/Berlin
+  backend:
+    depends_on:
+    - mariadb
+    image: kadeshar/legacyplayersv3-backend:latest
+    networks:
+    - rpll
+    volumes:
+    - rpll_backend_storage:/Storage
+    environment:
+    - MYSQL_URL=mysql://root:vagrant@mariadb/main
+    - ROCKET_DATABASES={main={url="mysql://root:vagrant@mariadb/main"}}
+    - SMTP_DNS=127.0.0.1:25
+    - HOST=http://localhost
+    - MODEL_GENERATOR=http://localhost:5555
+    - INSTANCE_STORAGE_PATH=/Storage
+  webclient:
+    image: kadeshar/legacyplayersv3-webclient
+    networks:
+    - rpll
+  reverse-proxy:
+    image: kadeshar/legacyplayersv3-reverse-proxy
+    networks:
+    - rpll
+    ports:
+    - '80:80'
+
+volumes:
+  rpll_mariadb:
+  rpll_backend_storage:
+
+networks:
+  rpll:
